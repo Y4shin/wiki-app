@@ -10,9 +10,82 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Log {
+  lid     Int        @id @default(autoincrement())
+  uid     Int?
+  user    User?      @relation(fields: [uid], references: [uid])
+  route   String
+  status  Int
+  time    DateTime   @default(now()) @db.Timestamptz(6)
+  entries LogEntry[] @relation()
+}
+
+model LogEntry {
+  eid     Int      @id @default(autoincrement())
+  lid     Int
+  log     Log      @relation(fields: [lid], references: [lid])
+  level   String
+  message String
+}
+
 model User {
-  id Int @id @default(autoincrement())
-  email String @unique
+  uid      Int    @id @default(autoincrement())
+  email    String @unique
   password String
-  name String
+  name     String
+  logs     Log[]  @relation()
+}
+
+model WikiPageTag {
+  id    String           @id
+  name  String           @unique
+  pages WikiPageHasTag[] @relation()
+}
+
+model WikiPageHasTag {
+  id         Int         @id @default(autoincrement())
+  wikiPageId String
+  tagId      String
+  wikiPage   WikiPage    @relation(fields: [wikiPageId], references: [id])
+  tag        WikiPageTag @relation(fields: [tagId], references: [id])
+}
+
+model WikiPageCategory {
+  id          String     @id
+  name        String     @unique
+  description String
+  pages       WikiPage[] @relation("wikiCategory")
+}
+
+model WikiPageRevision {
+  id             Int      @id @default(autoincrement())
+  revisionNumber Int
+  wikiPageId     String
+  content        String
+  createdAt      DateTime @default(now())
+  wikiPage       WikiPage @relation("wikiRevision", fields: [wikiPageId], references: [id])
+}
+
+model WikiPage {
+  id               String             @id
+  title            String             @unique
+  categoryId       String
+  category         WikiPageCategory   @relation("wikiCategory", fields: [categoryId], references: [id])
+  revisions        WikiPageRevision[] @relation("wikiRevision")
+  relatedPages     WikiPageRelation[] @relation("wikiPageRelationTo")
+  relatedPagesFrom WikiPageRelation[] @relation("wikiPageRelationFrom")
+  tags             WikiPageHasTag[]   @relation()
+}
+
+model WikiPageRelation {
+  id         Int          @id @default(autoincrement())
+  wikiPageId String
+  relatedId  String
+  type       RelationType
+  wikiPage   WikiPage     @relation("wikiPageRelationFrom", fields: [wikiPageId], references: [id])
+  related    WikiPage     @relation("wikiPageRelationTo", fields: [relatedId], references: [id])
+}
+
+enum RelationType {
+  CONTAINS_NPC
 }

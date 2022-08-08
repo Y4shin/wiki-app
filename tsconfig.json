@@ -7,7 +7,7 @@
     "pretty": true,
     "module": "CommonJS",
     "typeRoots": [
-      "@types",
+      "./@types",
       "./node_modules/@types"
     ],
     "outDir": "./dist",
