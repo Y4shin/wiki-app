@@ -9,7 +9,8 @@ export const getTagsBySearchTerm = async (searchTerm: string) => {
   const tags = await db.wikiPageTag.findMany({
     where: {
       name: {
-        contains: searchTerm
+        contains: searchTerm,
+        mode: 'insensitive'
       }
     }
   });
@@ -30,6 +31,18 @@ export const createNewTag = async (name: string, id: string) => {
     data: {
       name,
       id
+    }
+  });
+  return tag;
+}
+
+export const renameTag = async (id: string, name: string) => {
+  const tag = await db.wikiPageTag.update({
+    where: {
+      id
+    },
+    data: {
+      name
     }
   });
   return tag;

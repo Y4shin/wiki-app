@@ -6,7 +6,7 @@ const {getUserById} = userF;
 
 export default async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
-
+  
   if (!authHeader) {
     return res.status(401).send({ error: "No token provided", code: "auth/no-token" });
   }
@@ -30,7 +30,7 @@ export default async (req: Request, res: Response, next: NextFunction) => {
       if (decoded) {
         const user = decoded as {uid: number};
         const dbUser = await getUserById(user.uid);
-        if (!dbUser) {
+        if (!dbUser || !dbUser.active) {
           return res.status(401).send({ error: "Invalid token", code: "auth/invalid-token" });
         }
         req.uid = user.uid;
