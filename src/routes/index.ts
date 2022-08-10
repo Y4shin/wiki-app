@@ -24,6 +24,21 @@ export default router;
  *           type: string
  *           description: The display-name of the tag.
  *           example: "Vendor"
+ *     Category:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: string
+ *           description: The id of the category.
+ *           example: "npc"
+ *         name:
+ *           type: string
+ *           description: The display-name of the category.
+ *           example: "NPC"
+ *         description:
+ *           type: string
+ *           description: The description of the category.
+ *           example: "NPCs are people that you can talk to."
  *     Error:
  *       type: object
  *       properties:
@@ -76,7 +91,7 @@ export default router;
  *         code:
  *           type: string
  *           description: The error code.
- *           example: "invalid-body/missing-root-object"
+ *           example: "body/missing-root-object"
  *     BodyInvalidObject:
  *       type: object
  *       properties:
@@ -87,7 +102,7 @@ export default router;
  *         code:
  *           type: string
  *           description: The error code.
- *           example: "invalid-body/invalid-object"
+ *           example: "body/invalid-object"
  *   securitySchemes:
  *     bearerAuth:
  *       type: http

@@ -1,49 +1,75 @@
-import db from './db';
+import db from "./db";
+import {type PaginationOptions, renderPaginationOptions, type OrderOptions, getOrderByArray} from "./types";
 
-export const getTags = async () => {
-  const tags = await db.wikiPageTag.findMany();
-  return tags;
-}
-
-export const getTagsBySearchTerm = async (searchTerm: string) => {
-  const tags = await db.wikiPageTag.findMany({
-    where: {
+export const getTags = async (searchTerm?: string, pageOptions?: PaginationOptions, orderOptions?: OrderOptions<"id" | "name">) => {
+  const page = pageOptions ? renderPaginationOptions(pageOptions) : {};
+  const order = orderOptions ? getOrderByArray([orderOptions]) : {};
+  const where: {
+    where?: {
       name: {
-        contains: searchTerm,
-        mode: 'insensitive'
-      }
-    }
+        contains: string;
+        mode: "insensitive";
+      };
+    };
+  } = searchTerm ? {where: {name: {contains: searchTerm, mode: "insensitive"}}} : {};
+  return await db.wikiPageTag.findMany({
+    ...where,
+    ...page,
+    ...order,
   });
-  return tags;
-}
+};
+
+export const getTagsByIDs = async (
+  ids: string[],
+  pageOptions?: PaginationOptions,
+  orderOptions?: OrderOptions<"id" | "name">,
+) => {
+  const page = pageOptions ? renderPaginationOptions(pageOptions) : {};
+  const order = orderOptions ? getOrderByArray([orderOptions]) : {};
+
+  return await db.wikiPageTag.findMany({
+    where: {
+      id: {
+        in: ids,
+      },
+    },
+    ...page,
+    ...order,
+  });
+};
 
 export const getTagById = async (id: string) => {
-  const tag = await db.wikiPageTag.findFirst({
+  return await db.wikiPageTag.findFirst({
     where: {
-      id
-    }
+      id,
+    },
   });
-  return tag;
-}
+};
 
 export const createNewTag = async (name: string, id: string) => {
-  const tag = await db.wikiPageTag.create({
+  return await db.wikiPageTag.create({
     data: {
       name,
-      id
-    }
+      id,
+    },
   });
-  return tag;
-}
+};
 
 export const renameTag = async (id: string, name: string) => {
-  const tag = await db.wikiPageTag.update({
+  return await db.wikiPageTag.update({
     where: {
-      id
+      id,
     },
     data: {
-      name
-    }
+      name,
+    },
   });
-  return tag;
-}
+};
+
+export const deleteTag = async (id: string) => {
+  return await db.wikiPageTag.delete({
+    where: {
+      id,
+    },
+  });
+};

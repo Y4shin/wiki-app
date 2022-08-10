@@ -1,10 +1,9 @@
-import { Router, Request, Response } from "express";
-import { tag } from "../../../lib/db";
+import {Router, Request, Response} from "express";
+import {tag} from "../../../lib/db";
 import logMW from "../../../middleware/log";
 import auth from "../../../middleware/auth";
 
-const { getTags, getTagById, createNewTag, renameTag, getTagsBySearchTerm } =
-  tag;
+const {getTags, getTagById, createNewTag, renameTag} = tag;
 
 const router = Router();
 
@@ -33,15 +32,11 @@ const router = Router();
  *                   items:
  *                     $ref: '#/components/schemas/Tag'
  */
-router.get("/", [logMW], async (req: Request, res: Response) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     let tags;
-    if (
-      req.query.search &&
-      typeof req.query.search === "string" &&
-      req.query.search.length > 0
-    ) {
-      tags = await getTagsBySearchTerm(req.query.search);
+    if (req.query.search && typeof req.query.search === "string" && req.query.search.length > 0) {
+      tags = await getTags(req.query.search);
     } else {
       tags = await getTags();
     }
@@ -54,11 +49,8 @@ router.get("/", [logMW], async (req: Request, res: Response) => {
       }),
     });
   } catch (error) {
-    console.log(JSON.stringify(error))
-    req.newLog!("error", "Error getting tags");
-    return res
-      .status(500)
-      .send({ error: "Error getting tags", code: "server/internal" });
+    console.log(JSON.stringify(error));
+    return res.status(500).send({error: "Error getting tags", code: "server/internal"});
   }
 });
 
@@ -88,13 +80,11 @@ router.get("/", [logMW], async (req: Request, res: Response) => {
  *             schema:
  *               $ref: '#/components/schemas/ObjectNotFound'
  */
-router.get("/:id", [logMW], async (req: Request, res: Response) => {
+router.get("/:id", async (req: Request, res: Response) => {
   try {
     const tag = await getTagById(req.params.id);
     if (!tag) {
-      return res
-        .status(404)
-        .send({ error: "Tag not found", code: "object/not-found" });
+      return res.status(404).send({error: "Tag not found", code: "object/not-found"});
     }
     return res.json({
       tag: {
@@ -103,10 +93,7 @@ router.get("/:id", [logMW], async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    req.newLog!("error", "Error getting tag");
-    return res
-      .status(500)
-      .send({ error: "Error getting tag", code: "server/internal" });
+    return res.status(500).send({error: "Error getting tag", code: "server/internal"});
   }
 });
 
@@ -146,25 +133,30 @@ router.post("/", [auth, logMW], async (req: Request, res: Response) => {
     if (!req.body.tag) {
       return res.status(400).send({
         error: "No tag provided",
-        code: "invalid-body/missing-root-object",
+        code: "body/missing-root-object",
       });
     }
     if (!req.body.tag.name || !req.body.tag.id) {
       return res.status(400).send({
         error: "Tag needs name and id.",
-        code: "invalid-body/invalid-object",
+        code: "body/invalid-object",
       });
     }
-    if (
-      typeof req.body.tag.name !== "string" ||
-      typeof req.body.tag.id !== "string"
-    ) {
+    if (typeof req.body.tag.name !== "string" || typeof req.body.tag.id !== "string") {
       return res.status(400).send({
         error: "Name and id need to be strings.",
-        code: "invalid-body/invalid-object",
+        code: "body/invalid-object",
       });
     }
     const tag = await createNewTag(req.body.tag.name, req.body.tag.id);
+    req.newLog!(
+      "info",
+      "Created tag: " +
+        JSON.stringify({
+          id: tag.id,
+          name: tag.name,
+        }),
+    );
     return res.json({
       tag: {
         id: tag.id,
@@ -173,9 +165,7 @@ router.post("/", [auth, logMW], async (req: Request, res: Response) => {
     });
   } catch (error) {
     req.newLog!("error", "Error creating tag");
-    return res
-      .status(500)
-      .send({ error: "Error creating tag", code: "server/internal" });
+    return res.status(500).send({error: "Error creating tag", code: "server/internal"});
   }
 });
 
@@ -231,16 +221,17 @@ router.put("/:id", [auth, logMW], async (req: Request, res: Response) => {
     if (!req.body.name) {
       return res.status(400).send({
         error: "No name provided",
-        code: "invalid-body/missing-root-object",
+        code: "body/missing-root-object",
       });
     }
     if (typeof req.body.name !== "string") {
       return res.status(400).send({
         error: "Name needs to be a string.",
-        code: "invalid-body/invalid-object",
+        code: "body/invalid-object",
       });
     }
     const tag = await renameTag(req.params.id, req.body.name);
+    req.newLog!("info", "Renamed tag: " + JSON.stringify({id: tag.id}) + " to " + req.body.name + ".");
     return res.json({
       tag: {
         id: tag.id,
@@ -249,14 +240,10 @@ router.put("/:id", [auth, logMW], async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     if (error.code === "P2025") {
-      return res
-        .status(404)
-        .send({ error: "Tag not found", code: "object/not-found" });
+      return res.status(404).send({error: "Tag not found", code: "object/not-found"});
     } else {
       req.newLog!("error", "Error renaming tag: " + JSON.stringify(error));
-      return res
-        .status(500)
-        .send({ error: "Error renaming tag", code: "server/internal" });
+      return res.status(500).send({error: "Error renaming tag", code: "server/internal"});
     }
   }
 });
@@ -278,7 +265,7 @@ router.put("/:id", [auth, logMW], async (req: Request, res: Response) => {
  *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: The tag.
+ *         description: A success message.
  *         content:
  *           application/json:
  *             schema:
@@ -299,13 +286,11 @@ router.delete("/:id", [auth, logMW], async (req: Request, res: Response) => {
   try {
     return res.status(405).json({
       error: "Method not allowed, not implemented yet.",
-      code: "api/method-not-allowed",
+      code: "method/not-implemented",
     });
   } catch (error) {
     req.newLog!("error", `Error deleting tag: ${req.params.id}`);
-    return res
-      .status(500)
-      .send({ error: "Error deleting tag", code: "server/internal" });
+    return res.status(500).send({error: "Error deleting tag", code: "server/internal"});
   }
 });
 
